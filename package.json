@@ -1,0 +1,22 @@
+{
+  "name": "monocycle-abstract",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --ui tdd --timeout 5000 \"./{,!(node_modules)/**/}*.spec.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ramda": "^0.25.0",
+    "ramda-adjunct": "^2.11.0",
+    "sanctuary": "^0.15.0",
+    "sanctuary-maybe": "^1.0.0",
+    "xstream": "^11.7.0"
+  },
+  "devDependencies": {
+    "jsverify": "^0.8.4",
+    "mocha": "^5.2.0"
+  }
+}
