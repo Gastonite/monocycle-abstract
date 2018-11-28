@@ -1,12 +1,6 @@
-// const { makeComponent: _makeComponent } = require('../component')
-const pipe = require('ramda/src/pipe')
-const assert = require('assert')
-const { Store } = require('./store')
-// const { Stream: $ } = require('xstream')
+const test = require('ava')
 const jsc = require('jsverify')
-// const { diagramArbitrary, withTime } = require('cyclejs-test-helpers')
-// const assert = require('assert')
-// const equals = require('ramda/src/equals')
+const { Store } = require('./store')
 const identity = require('ramda/src/identity')
 const always = require('ramda/src/always')
 const when = require('ramda/src/when')
@@ -23,7 +17,7 @@ const isFunction = require('ramda-adjunct/lib/isFunction').default
 const isPlainObj = require('ramda-adjunct/lib/isPlainObj').default
 
 
-const anyArbitrary = jsc.oneof(
+const thruthyArb = jsc.oneof(
   jsc.number.smap(when(isFalsy, always(42)), identity),
   jsc.fn,
   jsc.dict,
@@ -31,202 +25,183 @@ const anyArbitrary = jsc.oneof(
   jsc.nestring,
   jsc.json.smap(when(either(isFalsy, isTrue), always({ a: 1 })), identity),
 )
-const notFalsyArbitrary = anyArbitrary.smap(when(isFalsy, always('yo')), identity)
 
-suite('Store', () => {
+test('gets, sets values', t => {
 
-  suite('with no args', () => {
+  const store = Store()
 
-    test('gets, sets and updates values', () => {
+  t.deepEqual(
+    keys(store),
+    ['get', 'has', 'set', 'hasStore']
+  )
 
-      const store = Store()
+  t.true(isFunction(store.get))
+  t.true(isFunction(store.has))
+  t.true(isFunction(store.set))
+  t.true(store.hasStore)
 
-      assert.deepStrictEqual(
-        keys(store),
-        ['get', 'has', 'set', 'hasStore']
-      )
+  const gaSymbol = Symbol('ga')
 
+  t.false(store.has('bu'))
+  t.is(store.get('bu'), void 0)
+  t.is(store.get(gaSymbol), void 0)
 
-      assert(isFunction(store.get))
-      assert(isFunction(store.has))
-      assert(isFunction(store.set))
-      assert(isTrue(store.hasStore))
+  t.is(store.set(gaSymbol), void 0)
+  t.is(store.get(gaSymbol), void 0)
+  t.false(store.has(gaSymbol))
 
-      const gaSymbol = Symbol('ga')
+  t.is(store.set(gaSymbol, 42), void 0)
+  t.is(store.get(gaSymbol), 42)
+  t.true(store.has(gaSymbol))
 
-      assert(isFalse(store.has('bu')))
-      assert(isUndefined(store.get('bu')))
-      assert(isUndefined(store.get(gaSymbol)))
+  t.is(store.set(gaSymbol, 'zo'), void 0)
+  t.is(store.get(gaSymbol), 'zo')
+  t.true(store.has(gaSymbol))
 
-      assert(isUndefined(store.set(gaSymbol)))
-      assert(isUndefined(store.get(gaSymbol)))
-      assert(isFalse(store.has(gaSymbol)))
+  t.is(store.set(gaSymbol), void 0)
+  t.is(store.get(gaSymbol), void 0)
+  t.false(store.has(gaSymbol))
+})
 
-      assert(isUndefined(store.set(gaSymbol, 42)))
-      assert(identical(store.get(gaSymbol), 42))
-      assert(isTrue(store.has(gaSymbol)))
+test('gets, sets a value (with default data)', t => {
 
-      assert(isUndefined(store.set(gaSymbol, 'zo')))
-      assert(identical(store.get(gaSymbol), 'zo'))
-      assert(isTrue(store.has(gaSymbol)))
-
-      assert(isUndefined(store.set(gaSymbol)))
-      assert(isUndefined(store.get(gaSymbol)))
-      assert(isFalse(store.has(gaSymbol)))
-
-    })
-
-    test('auto apply a function-type value when arguments is passed', () => {
-
-      jsc.assert(jsc.forall(jsc.nearray(anyArbitrary), jsc.nearray(anyArbitrary), (argsA, argsB) => {
-
-        const store = Store()
-
-        const calls = []
-
-        const f = (...args) => {
-          calls.push(args)
-        }
-
-        store.set('ga', f)
-
-        assert(identical(store.get('ga'), f))
-
-        store.get('ga', ...argsA)
-
-        assert.deepEqual(calls, [argsA])
-
-        store.get('ga', ...argsB)
-
-        assert.deepEqual(calls, [argsA, argsB])
-
-        return true
-      }), {
-          tests: 100,
-          size: 200
-        })
-    })
+  const store = Store({
+    data: { bu: 41 },
   })
 
-  suite('with default data', () => {
+  t.is(store.get('bu'), 41)
+  t.is(store.set('bu', 42))
+  t.is(store.get('bu'), 42)
+})
 
-    test('gets, sets and updates a value', () => {
+test('guard allows setting value', t => {
 
-      const store = Store({
-        data: { bu: 41 },
-        guard: always(true)
-      })
+  t.plan(5)
 
-      assert(identical(store.get('bu'), 41))
-      assert(isUndefined(store.set('bu', 42)))
-      assert(identical(store.get('bu'), 42))
-    })
+  const store = Store({
+    data: { bu: 41 },
+    guard: (...args) => {
 
+      t.is(args.length, 4)
+      t.deepEqual(args, ['bu', 42, 43, 44])
+
+      return true
+    }
   })
 
-  suite('with a guard', () => {
+  t.is(store.get('bu'), 41)
+  t.is(store.set('bu', 42, 43, 44))
+  t.is(store.get('bu'), 42)
+})
 
-    test('calls guard before setting a value', () => {
+test('guard prevents setting value', t => {
 
-      const store = Store({
-        guard: (...args) => {
-          calls.push(args)
-        }
-      })
-
-      const calls = []
-
-      assert(isUndefined(store.set('bu', void 0, 'ga')))
-      assert(isUndefined(store.set('bu', 42)))
-
-      assert.deepStrictEqual(
-        calls,
-        [
-          ['bu', void 0, 'ga'],
-          ['bu', 42],
-        ]
-      )
-    })
-
-    test('prevents setting a value', () =>
-      jsc.assertForall(jsc.falsy, a => {
-
-        const store = Store({
-          guard: always(a)
-        })
-
-        assert(isUndefined(store.get('bu')))
-        assert(isUndefined(store.set('bu', 42)))
-        assert(isUndefined(store.set('bu', 43)))
-        assert(isUndefined(store.get('bu')))
-
-        return true
-      })
-    )
-
-    test('gets, sets and updates a value', () => {
-
-      const store = Store({
-        guard: always(true)
-      })
-
-      assert(isUndefined(store.get('bu')))
-      assert(isUndefined(store.set('bu')))
-
-      assert(isUndefined(store.set('bu', 42)))
-      assert(identical(store.get('bu'), 42))
-
-      assert(isUndefined(store.set('bu', 43)))
-      assert(identical(store.get('bu'), 43))
-    })
-
-
-    test('overrides returned value when returning a thuthy but not true value', () => {
-
-      const property = jsc.forall(anyArbitrary, a => {
-
-        const store = Store({
-          guard: always(a)
-        })
-
-        assert(isUndefined(store.get('bu')))
-        assert(isUndefined(store.set('bu', 42)))
-        assert(isUndefined(store.set('bu', 43)))
-        assert(identical(store.get('bu'), a))
-
-        return true
-      })
-
-      jsc.assert(property, {
-        tests: 100,
-        size: 200
-      })
-    })
-
-  })
-
-  test('calls assert when asked item is not found', () => {
-
-    const calls = []
+  t.plan(400)
+  const property = jsc.forall(jsc.falsy, a => {
 
     const store = Store({
-      assert: (...args) => {
-
-        calls.push(args)
-      }
+      guard: always(a)
     })
-    store.get('ga')
-    store.get('bu')
-    store.get('zo', {})
 
-    assert.deepStrictEqual(
-      calls,
-      [
-        ['ga'],
-        ['bu'],
-        ['zo'],
-      ]
-    )
+    t.is(store.get('bu'), void 0)
+    t.is(store.set('bu', 42), void 0)
+    t.is(store.set('bu', 43), void 0)
+    t.is(store.get('bu'), void 0)
+
+    return true
   })
 
+  jsc.assert(property, {
+    tests: 100,
+    size: 100
+  })
+})
+
+test('guard allows setting overriden value (non-true)', t => {
+
+  t.plan(500)
+  const property = jsc.forall(thruthyArb, a => {
+
+    const store = Store({
+      data: { bu: 41 },
+      guard: (...args) => {
+
+        t.is(args.length, 4)
+        t.deepEqual(args, ['bu', 42, 43, 44])
+
+        return a
+      }
+    })
+
+    t.is(store.get('bu'), 41)
+    t.is(store.set('bu', 42, 43, 44))
+    t.is(store.get('bu'), a)
+
+    return true
+  })
+
+  jsc.assert(property, {
+    tests: 100,
+    size: 100
+  })
+})
+
+test(`auto apply a function 'value' when arguments`, t => {
+
+  const property = jsc.forall(jsc.nearray(thruthyArb), jsc.nearray(thruthyArb), (argsA, argsB) => {
+
+    const store = Store()
+    const calls = []
+
+    const f = (...args) => {
+
+      calls.push(args)
+      return args
+    }
+
+    store.set('zo', f)
+
+    t.is(store.get('zo'), f)
+
+    const zoA = store.get('zo', ...argsA)
+
+    t.deepEqual(zoA, argsA)
+    t.deepEqual(calls, [argsA])
+
+    const zoB = store.get('zo', ...argsB)
+
+    t.deepEqual(zoB, argsB)
+    t.deepEqual(calls, [argsA, argsB])
+
+    return true
+  })
+
+  jsc.assert(property, {
+    tests: 100,
+  })
+})
+
+test('calls assert when asked item is not found', t => {
+
+  const calls = []
+
+  const store = Store({
+    assert: (...args) => {
+
+      calls.push(args)
+    }
+  })
+
+  store.get('ga')
+  store.get('bu')
+  store.get('zo', {})
+
+  t.deepEqual(
+    calls,
+    [
+      ['ga'],
+      ['bu'],
+      ['zo'],
+    ]
+  )
 })

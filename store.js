@@ -29,7 +29,6 @@ const Store = pipe(
       applyTo(data),
     )
 
-
     const store = {
       get: (key, ...args) => pipe(
         prop,

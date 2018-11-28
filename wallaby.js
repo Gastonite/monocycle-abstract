@@ -8,19 +8,17 @@ module.exports = function () {
     ],
 
     tests: [
+      // 'Button/*spec.js',
       '**/*.spec.js',
+      '!node_modules/**/*',
     ],
     env: {
       type: 'node'
     },
+    testFramework: 'ava',
     setup: function (wallaby) {
-      // console.log('setup', wallaby)
-      var mocha = wallaby.testFramework;
-      mocha.ui('tdd');
-      mocha.timeout(5000);
-      // etc.
-      // require('module-alias/register')
 
-    }
-  };
-};
+    },
+    debug: true,
+  }
+}

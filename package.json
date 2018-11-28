@@ -6,8 +6,8 @@
   "scripts": {
     "test": "mocha --ui tdd --timeout 5000 \"./{,!(node_modules)/**/}*.spec.js\""
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Clément Pasquier",
+  "license": "GPL",
   "dependencies": {
     "ramda": "^0.25.0",
     "ramda-adjunct": "^2.11.0",
@@ -16,7 +16,7 @@
     "xstream": "^11.7.0"
   },
   "devDependencies": {
-    "jsverify": "^0.8.4",
-    "mocha": "^5.2.0"
+    "ava": "^1.0.0-rc.2",
+    "jsverify": "^0.8.4"
   }
 }
