@@ -9,9 +9,9 @@ const pipe = require('ramda/src/pipe')
 
 const buComponent = sources => ({ bu: 123 })
 
-const WithGa = ({ myOption } = {}) => (component = noop) => sources => ({
+const WithGa = ({ gaOption = 42 } = {}) => (component = noop) => sources => ({
   ...component(sources),
-  ga: myOption || 42
+  ga: gaOption
 })
 
 const WithZo = always((component = noop) => sources => ({
@@ -71,16 +71,16 @@ test('with default options', t => {
 
   const { Component } = t.context
 
-  Component.set('ga', WithGa, {
-    myOption: 49
-  })
+  Component.set('ga', [
+    [WithGa, { gaOption: 49 }]
+  ])
 
   const withGa = Component.get('ga')()
 
   const ga = withGa()
 
   t.deepEqual(
-    ga(),
+    ga()/*?*/,
     { ga: 49 }
   )
 })
@@ -102,14 +102,14 @@ test('from another behavior', t => {
   )
 })
 
-test('from another behavior with overriden options', t => {
+test('from another behavior (with default options)', t => {
 
   const { Component } = t.context
 
   Component.set('ga', WithGa)
-  Component.set('zo', 'ga', {
-    myOption: 'bu'
-  })
+  Component.set('zo', [
+    ['ga', { gaOption: 'bu' }],
+  ])
 
   const withGa = Component.get('ga')()
   const withZo = Component.get('zo')()
@@ -128,6 +128,8 @@ test('from another behavior with overriden options', t => {
   )
 })
 
+
+
 test('add a make method', t => {
 
   const { Component } = t.context
@@ -144,5 +146,37 @@ test('add a make method', t => {
     ga(),
     { ga: 42 }
   )
+})
 
+
+test('from others behaviors (with default options)', t => {
+
+  const { Component } = t.context
+
+  Component.set('ga', WithGa)
+  Component.set('zo', WithZo)
+  Component.set('bu', [
+    'zo',
+    ['ga', { gaOption: 8 }],
+  ])
+
+  const ga = Component.get('ga').make()
+  const zo = Component.get('zo').make()
+  const bu = Component.get('bu').make()
+
+
+  t.deepEqual(
+    ga(),
+    { ga: 42 }
+  )
+
+  t.deepEqual(
+    zo(),
+    { zo: 43 }
+  )
+
+  t.deepEqual(
+    bu(),
+    { zo: 43, ga: 8 }
+  )
 })
