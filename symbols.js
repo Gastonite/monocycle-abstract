@@ -54,10 +54,10 @@ const WithSymbols = pipe(
 
         defaultOptions = ensurePlainObj(defaultOptions)
 
-        console.log('BehaviorFactory()', {
-          factory,
-          defaultOptions
-        })
+        // console.log('BehaviorFactory()', {
+        //   factory,
+        //   defaultOptions
+        // })
         // if (!isFunction(factory.coerce))
         //   factory.coerce = coerce
 
