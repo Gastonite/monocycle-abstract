@@ -1,16 +1,13 @@
 const { Store } = require('./store')
-const { pipe } = require('monocycle/utilities/pipe')
-const { makeComponent } = require('monocycle/component')
 const isFunction = require('ramda-adjunct/lib/isFunction').default
 const isBoolean = require('ramda-adjunct/lib/isBoolean').default
 const isPlainObj = require('ramda-adjunct/lib/isPlainObj').default
 const ensureArray = require('ramda-adjunct/lib/ensureArray').default
-const isString = require('ramda-adjunct/lib/isString').default
 const isArray = require('ramda-adjunct/lib/isArray').default
 const merge = require('ramda/src/merge')
 const unless = require('ramda/src/unless')
-const either = require('ramda/src/either')
 const concat = require('ramda/src/concat')
+const pipe = require('ramda/src/pipe')
 const __ = require('ramda/src/__')
 const always = require('ramda/src/always')
 const assoc = require('ramda/src/assoc')
@@ -22,21 +19,16 @@ const map = require('ramda/src/map')
 const propEq = require('ramda/src/propEq')
 const ifElse = require('ramda/src/ifElse')
 const prop = require('ramda/src/prop')
-const defaultTo = require('ramda/src/defaultTo')
 const when = require('ramda/src/when')
 const filter = require('ramda/src/filter')
 const both = require('ramda/src/both')
-const apply = require('ramda/src/apply')
 const propSatisfies = require('ramda/src/propSatisfies')
 const lensProp = require('ramda/src/lensProp')
-const lensIndex = require('ramda/src/lensIndex')
 const { ensurePlainObj } = require('monocycle/utilities/ensurePlainObj')
 const { coerce } = require('monocycle/utilities/coerce')
-const log = require('monocycle/utilities/log').Log('Symbols')
-
+// const log = require('monocycle/utilities/log').Log('Symbols')
 
 const WithSymbols = pipe(
-  // log.partial(1),
   ensurePlainObj,
   over(lensProp('strict'), unless(isBoolean, always(true))),
   over(lensProp('mergeOptions'), unless(isFunction, always(merge))),
@@ -44,30 +36,16 @@ const WithSymbols = pipe(
 
     const assert = !strict
       ? void 0
-      : key => {
-        throw new Error(`Unknown '${key}' symbol`)
-      }
+      : key => { throw new Error(`Unknown '${key}' symbol`) }
 
     return Component => {
 
       const BehaviorFactory = (factory, defaultOptions) => {
 
-        defaultOptions = ensurePlainObj(defaultOptions)
-
-        // console.log('BehaviorFactory()', {
-        //   factory,
-        //   defaultOptions
-        // })
-        // if (!isFunction(factory.coerce))
-        //   factory.coerce = coerce
-
         const makeBehavior = pipe(
-          // log.partial(1),
-          // factory.coerce,
-          coerce,
-          mergeOptions.bind(void 0, defaultOptions),
+          unless(isFunction, always(coerce))(factory.coerce),
+          mergeOptions.bind(void 0, ensurePlainObj(defaultOptions)),
           assoc('Component', Component),
-          // log.partial(2),
           factory
         )
 
